@@ -8,6 +8,6 @@
 
 - Being In SuperUser Mode:
 
-```
+```bash
 ~$ ./myuser su
 ```

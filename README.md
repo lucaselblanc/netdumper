@@ -1,6 +1,6 @@
 # Netdumper
 
-​A automated pentesting tool for capturing 4-way handshake packets in WPA2 networks.
+​Automated pentesting tool for capturing IEEE 802.11 frames - WPA2 4-way handshake packets.
 
 # Requirements
 

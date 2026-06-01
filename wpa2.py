@@ -308,25 +308,18 @@ def start(interfaces):
 
     finally:
         logging.info(f"{GREEN}Interrupting Monitor Mode And Restoring Wi-Fi Network...")
-    try:
-        if monitor_plate:
-            run_command(f"airmon-ng stop {monitor_plate}")
+        try:
+            if monitor_plate:
+                run_command(f"airmon-ng stop {monitor_plate}")
 
-        if not is_termux():
-            try:
+            if not is_termux():
                 run_command("systemctl restart NetworkManager")
-            except Exception:
-                pass
+                run_command("nmcli radio wifi on")
 
-        run_command("nmcli radio wifi on")
-        logging.info(
-            f"{GREEN}Network interfaces restored and NetworkManager restarted successfully."
-        )
+            logging.info(f"{GREEN}Network interfaces restored and NetworkManager restarted successfully.")
 
-    except Exception as cleanup_error:
-        logging.error(
-            f"{RED}Error while trying to restore default network services: {cleanup_error}"
-        )
+        except Exception as cleanup_error:
+            logging.error(f"{RED}Error while trying to restore default network services: {cleanup_error}")
 
 if __name__ == "__main__":
 

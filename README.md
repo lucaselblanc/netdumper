@@ -4,7 +4,7 @@
 
 # Requirements
 
-- Wi-Fi plate must be support monitoring mode (check the firmware).
+- The Wireless Network Interface Card (WNIC) Chipset/Driver Must Support Monitor Mode.
 
 - Being In SuperUser Mode:
 
@@ -38,7 +38,6 @@ Install The Necessary Packages/Depencies Manually:
 ~$ ./myuser git clone https://github.com/*.git && cd *
 ~$ ./myuser make
 ~$ ./myuser chmod +x *
-~$ ./myuser ln -s "$(pwd)/*" "$PREFIX/bin/*"
 ```
 
 Run:

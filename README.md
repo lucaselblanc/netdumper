@@ -24,6 +24,7 @@
 
 ```bash
 ~$ ./myuser su
+root@distro:/home/myuser#
 ```
 
 ## Linux
@@ -43,7 +44,7 @@ Clone The Repository:
  Run:
 ```bash
 ~$ su
-root@home:~# python3 ./netdumper/wpa2.py
+root@distro:/home/myuser# python3 ./netdumper/wpa2.py
 ```
 
 ## Termux

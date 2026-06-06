@@ -26,7 +26,7 @@
 ~$ ./myuser su
 ```
 
-## Linux: 
+## Linux
 
 Clone The Repository:
 ```bash

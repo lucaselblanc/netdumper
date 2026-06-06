@@ -26,8 +26,6 @@
 ~$ ./myuser su
 ```
 
-## Run
-
 ## Linux: 
 
 Clone The Repository:
@@ -42,7 +40,7 @@ Clone The Repository:
 - net-tools
 - wireless-tools
 
-Run:
+ Run:
 ```bash
 ~$ su
 root@home:~# python3 ./netdumper/wpa2.py
@@ -100,7 +98,7 @@ Example:
 ~$
 ```
 
-## Run
+ Run:
 ```bash
 ~$ su -c "/data/data/com.termux/files/usr/bin/python3 /data/data/com.termux/files/home/netdumper/wpa2.py"
 ```

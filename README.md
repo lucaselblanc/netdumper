@@ -92,6 +92,14 @@ Example:
 ~$ which iwconfig
 ```
 
+ Expected Output:
+
+```bash
+~$ which <binary>
+/data/data/com.termux/files/usr/bin/<binary>
+~$
+```
+
 Run:
 ```bash
 ~$ ./myuser su -c "/data/data/com.termux/files/usr/bin/python3 /data/data/com.termux/files/home/netdumper/wpa2.py"

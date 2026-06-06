@@ -1,6 +1,6 @@
 # Netdumper
 
-​Automated pentesting tool for capturing IEEE 802.11 frames - WPA2 4-way handshake packets.
+​Automated pentesting tool for capturing IEEE 802.11 frames / WPA2 4-way handshake packets.
 
 # Requirements
 
@@ -23,7 +23,8 @@ Clone The Repository:
 
 Run:
 ```bash
-~$ python3 netdumper/wpa2.py"
+~$ su
+root@localhost:~# python3 netdumper/wpa2.py"
 ```
 
 ## Termux: 
@@ -37,7 +38,6 @@ Install The Necessary Packages/Depencies Manually:
 ```bash
 ~$ ./myuser git clone https://github.com/*.git && cd *
 ~$ ./myuser make
-~$ ./myuser chmod +x *
 ```
 
 Run:

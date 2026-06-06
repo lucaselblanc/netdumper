@@ -1,8 +1,8 @@
-# Netdumper
+## Netdumper
 
  ​Automated wireless pentesting/auditing tool for IEEE 802.11 monitoring and WPA/WPA2 4-Way Handshake capture.
 
-# The tool automatically:
+## The tool automatically:
 
 - Installs required packages automatically (GNU/Linux Only).
 - Detects wireless interfaces: managed/monitor.
@@ -14,7 +14,7 @@
 - Verifies captured handshakes.
 - Restores network services after execution.
 
-# Requirements
+## Requirements
 
 - The Wireless Network Interface Card (WNIC) Chipset/Driver Must Support Monitor Mode With Packet Injection.
 
@@ -70,7 +70,7 @@ Example:
 ~/project $ make install
 ```
 
-### Required binaries:
+## Required binaries:
 
 - iw //binary
 - aircrack-ng //binary
@@ -80,7 +80,7 @@ Example:
 - ifconfig//binary
 - iwconfig //binary
 
-### Verify Installation:
+## Verify Installation:
 
 ```bash
 ~$ which iw

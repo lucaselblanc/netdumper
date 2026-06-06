@@ -54,7 +54,7 @@ root@home:~# python3 ./netdumper/wpa2.py
 
 Clone The Repository:
 ```bash
-~$ ./myuser git clone https://github.com/lucaselblanc/netdumper.git
+~$ git clone https://github.com/lucaselblanc/netdumper.git
 ```
 
  Unlike traditional GNU/Linux environments, NetDumper does not automatically install dependencies on Termux. Some required packages may not be available in the default Termux repositories and must be compiled or installed manually.
@@ -63,7 +63,7 @@ Example:
 
  Install The Necessary Packages/Depencies Manually:
 ```bash
-~$ ./myuser git clone https://github.com/<project>.git && cd <project>
+~$ git clone https://github.com/<project>.git && cd <project>
 ~/project $ autoreconf -i
 ~/project $ ./configure
 ~/project $ make

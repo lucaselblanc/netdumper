@@ -26,7 +26,7 @@
 ~$ ./myuser su
 ```
 
-# Run
+## Run
 
 ## Linux: 
 
@@ -48,7 +48,7 @@ Run:
 root@home:~# python3 ./netdumper/wpa2.py
 ```
 
-## Termux:
+## Termux
 
  Note: Monitor Mode and Packet Injection support on Android devices depends on the external Wi-Fi adapter, kernel support, and driver availability.
 
@@ -61,7 +61,7 @@ Clone The Repository:
 
 Example:
 
- Install The Necessary Packages/Depencies Manually:
+ Install The Necessary Packages / Depencies Manually:
 ```bash
 ~$ git clone https://github.com/<project>.git && cd <project>
 ~/project $ autoreconf -i
@@ -77,7 +77,7 @@ Example:
 - airmon-ng //shell script
 - airodump-ng //binary
 - aireplay-ng //binary
-- ifconfig//binary
+- ifconfig //binary
 - iwconfig //binary
 
 ## Verify Installation:
@@ -100,7 +100,7 @@ Example:
 ~$
 ```
 
-Run:
+## Run
 ```bash
 ~$ su -c "/data/data/com.termux/files/usr/bin/python3 /data/data/com.termux/files/home/netdumper/wpa2.py"
 ```
@@ -130,4 +130,4 @@ package_2-01.cap
 
 ## Legal Notice
 
- This project is intended exclusively for authorized wireless security assessments, research, and educational purposes, users are solely responsible for ensuring compliance with applicable laws, regulations, and authorization requirements before using this software.
+ This project is intended exclusively for authorized wireless security assessments, research, and educational purposes. Users are solely responsible for ensuring compliance with applicable laws, regulations, and authorization requirements before using this software.

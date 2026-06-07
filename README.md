@@ -110,13 +110,10 @@ Example:
 
 ```txt
 netdumper.log
-airodump.txt
-airodump-01.csv
-airodump-02.csv
-airodump-03.csv
-package_0-01.cap
-package_1-01.cap
-package_2-01.cap
+airodump.csv
+802.11-01.cap
+802.11-02.cap
+802.11-03.cap
 ...
 ```
 

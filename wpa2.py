@@ -188,7 +188,6 @@ def start(interfaces):
 
         if os.path.exists(csv_file):
             master_csv = os.path.join(LOCAL_DIR, "airodump.csv")
-            master_txt = os.path.join(LOCAL_DIR, "airodump.txt")
 
             with open(csv_file, "r", encoding="utf-8", errors="ignore") as f:
                 raw_new_lines = [
@@ -197,30 +196,61 @@ def start(interfaces):
                     if line.strip()
                 ]
 
+            existing_pairs = set()
             existing_lines = set()
+
+            def extract_pair(line):
+                parts = [p.strip() for p in line.split(",")]
+
+                if len(parts) < 2:
+                    return None
+
+                if (len(parts) >= 6 and MAC_REGEX.match(parts[0]) and MAC_REGEX.match(parts[5])):
+                    station_mac = parts[0].upper()
+                    bssid = parts[5].upper()
+                    return (bssid, station_mac)
+
+                if (len(parts) >= 4 and MAC_REGEX.match(parts[0])):
+                    bssid = parts[0].upper()
+                    return (bssid, "")
+                return None
 
             if os.path.exists(master_csv):
                 with open(master_csv, "r", encoding="utf-8", errors="ignore") as f:
-                    existing_lines = set(
-                        line.rstrip()
-                        for line in f
-                        if line.strip()
-                    )
+                    for line in f:
+                        clean_line = line.strip()
+
+                        if not clean_line:
+                            continue
+
+                        existing_lines.add(clean_line)
+
+                        pair = extract_pair(clean_line)
+
+                        if pair:
+                            existing_pairs.add(pair)
 
             unique_lines = []
 
             for line in raw_new_lines:
                 clean_line = line.strip()
+
                 if clean_line in ["", ",", ",,", ",,,"]:
                     continue
 
-                if (
-                    "BSSID" in clean_line
-                    or "Station MAC" in clean_line
-                ):
+                if ("BSSID" in clean_line or "Station MAC" in clean_line):
                     if clean_line not in existing_lines:
                         existing_lines.add(clean_line)
                         unique_lines.append(clean_line)
+                    continue
+
+                pair = extract_pair(clean_line)
+
+                if pair:
+                    if pair not in existing_pairs:
+                        existing_pairs.add(pair)
+                        unique_lines.append(clean_line)
+
                     continue
 
                 if clean_line not in existing_lines:
@@ -229,10 +259,6 @@ def start(interfaces):
 
             if unique_lines:
                 with open(master_csv, "a", encoding="utf-8") as f:
-                    for line in unique_lines:
-                        f.write(line + "\n")
-
-                with open(master_txt, "a", encoding="utf-8") as f:
                     for line in unique_lines:
                         f.write(line + "\n")
 
@@ -253,14 +279,28 @@ def start(interfaces):
 
             return
 
+        for file_name in os.listdir(LOCAL_DIR):
+            if (file_name.startswith("airodump-") and file_name.endswith(".csv")):
+                try:
+                    os.remove(os.path.join(LOCAL_DIR, file_name))
+                    logging.info(
+                        f"{PINK}Temporary File Removed:{RESET} "
+                        f"{CYAN}{file_name}"
+                    )
+                except Exception as cleanup_error:
+                    logging.warning(
+                        f"{RED}Could Not Remove Temporary File "
+                        f"{file_name}: {cleanup_error}"
+        )
+
         logging.info(
-            f"{PINK}Parsing 'airodump.txt' To Identify Targets BSSID And Clients..."
+            f"{PINK}Parsing 'airodump.csv' To Identify Targets BSSID And Clients..."
         )
 
         targets = []
 
         with open(
-            os.path.join(LOCAL_DIR, "airodump.txt"),
+            os.path.join(LOCAL_DIR, "airodump.csv"),
             "r",
             encoding="utf-8",
             errors="ignore"
@@ -283,7 +323,7 @@ def start(interfaces):
                 channel = parts[3]
                 if channel.isdigit():
                     channels_routers[bssid] = channel
-            if reading_clients and len(parts) >= 6:
+            if (reading_clients and len(parts) >= 6 and MAC_REGEX.match(parts[0]) and MAC_REGEX.match(parts[5])):
                 mac_client = parts[0]
                 mac_router = parts[5]
                 if MAC_REGEX.match(mac_client) and mac_router in channels_routers:

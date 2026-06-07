@@ -183,7 +183,7 @@ def start(interfaces):
         except subprocess.TimeoutExpired:
             pass
 
-        time.sleep(2)
+        time.sleep(1)
         csv_file = f"{cap_prefix}-01.csv"
 
         if os.path.exists(csv_file):
@@ -357,7 +357,7 @@ def start(interfaces):
                 f"aireplay-ng -0 1 -a {mac_rot} -c {mac_cli} {monitor_wnic}"
             )
 
-            cap_file = os.path.join(LOCAL_DIR, f"package_{idx}")
+            cap_file = os.path.join(LOCAL_DIR, f"802.11{idx}")
             logging.info(
                 f"{PINK}Starting Dynamic Capture for Handshake: {RESET}{CYAN}{cap_file}.cap on Channel {channel}..."
             )

@@ -31,10 +31,7 @@ def is_termux():
 
 def run_command(command):
     if isinstance(command, str):
-        if is_termux():
-            command = command.strip()
-        else:
-            command = f"sudo {command.strip()}"
+        command = command.strip()
 
     try:
         result = subprocess.run(
@@ -190,18 +187,84 @@ def start(interfaces):
         csv_file = f"{cap_prefix}-01.csv"
 
         if os.path.exists(csv_file):
-            shutil.copy(csv_file, os.path.join(LOCAL_DIR, "airodump.txt"))
-            logging.info(f"{GREEN}Monitoring Data Successfully Saved To 'airodump.txt'.")
+            master_csv = os.path.join(LOCAL_DIR, "airodump.csv")
+            master_txt = os.path.join(LOCAL_DIR, "airodump.txt")
+
+            with open(csv_file, "r", encoding="utf-8", errors="ignore") as f:
+                raw_new_lines = [
+                    line.rstrip()
+                    for line in f
+                    if line.strip()
+                ]
+
+            existing_lines = set()
+
+            if os.path.exists(master_csv):
+                with open(master_csv, "r", encoding="utf-8", errors="ignore") as f:
+                    existing_lines = set(
+                        line.rstrip()
+                        for line in f
+                        if line.strip()
+                    )
+
+            unique_lines = []
+
+            for line in raw_new_lines:
+                clean_line = line.strip()
+                if clean_line in ["", ",", ",,", ",,,"]:
+                    continue
+
+                if (
+                    "BSSID" in clean_line
+                    or "Station MAC" in clean_line
+                ):
+                    if clean_line not in existing_lines:
+                        existing_lines.add(clean_line)
+                        unique_lines.append(clean_line)
+                    continue
+
+                if clean_line not in existing_lines:
+                    existing_lines.add(clean_line)
+                    unique_lines.append(clean_line)
+
+            if unique_lines:
+                with open(master_csv, "a", encoding="utf-8") as f:
+                    for line in unique_lines:
+                        f.write(line + "\n")
+
+                with open(master_txt, "a", encoding="utf-8") as f:
+                    for line in unique_lines:
+                        f.write(line + "\n")
+
+                logging.info(
+                    f"{GREEN}Added "
+                    f"{CYAN}{len(unique_lines)}{RESET}"
+                    f"{GREEN} New Unique Lines."
+                )
+            else:
+                logging.info(
+                    f"{PINK}No New Unique Data Was Found."
+                )
         else:
             logging.warning(
                 f"{PINK}No Data Was Captured By airodump-ng, "
                 "Or The File Was Not Generated."
             )
+
             return
 
-        logging.info(f"{PINK}Parsing 'airodump.txt' To Identify Targets BSSID And Clients...")
+        logging.info(
+            f"{PINK}Parsing 'airodump.txt' To Identify Targets BSSID And Clients..."
+        )
+
         targets = []
-        with open(os.path.join(LOCAL_DIR, "airodump.txt"), "r", encoding="utf-8", errors="ignore") as f:
+
+        with open(
+            os.path.join(LOCAL_DIR, "airodump.txt"),
+            "r",
+            encoding="utf-8",
+            errors="ignore"
+        ) as f:
             lns = f.readlines()
 
         reading_clients = False
@@ -367,7 +430,6 @@ if __name__ == "__main__":
         PATH = "/sbin:/usr/sbin:/usr/local/sbin"
         if PATH not in os.environ["PATH"]:
             os.environ["PATH"] = f"{os.environ['PATH']}:{PATH}"
-
         package_installer()
 
     mapped_interfaces = mapping_interfaces()

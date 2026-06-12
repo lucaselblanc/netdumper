@@ -477,4 +477,4 @@ if __name__ == "__main__":
     start(mapped_interfaces)
 	
     if os.path.exists(os.path.join(LOCAL_DIR, "airodump.csv")):
-        run_command(os.path.join(LOCAL_DIR, "python3 macextractor.py"))
+        run_command(f"python3 {os.path.join(LOCAL_DIR, 'macextractor.py')}")

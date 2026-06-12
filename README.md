@@ -9,6 +9,7 @@
 - Enables monitor mode.
 - Scans nearby access points and clients.
 - Identifies active AP ↔ Client pairs.
+- Extract client/AP MAC address.
 - Performs targeted deauthentication.
 - Captures WPA/WPA2 handshakes.
 - Verifies captured handshakes.

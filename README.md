@@ -44,7 +44,7 @@ Clone The Repository:
  Run:
 ```bash
 ~$ su
-root@distro:/home/myuser# python3 ./netdumper/wpa2.py
+root@distro:/home/myuser# python3 ./netdumper/main.py
 ```
 
 ## Termux
@@ -101,7 +101,7 @@ Example:
 
  Run:
 ```bash
-~$ su -c "/data/data/com.termux/files/usr/bin/python3 /data/data/com.termux/files/home/netdumper/wpa2.py"
+~$ su -c "/data/data/com.termux/files/usr/bin/python3 /data/data/com.termux/files/home/netdumper/main.py"
 ```
 
 ## Output Files
@@ -111,6 +111,7 @@ Example:
 ```txt
 netdumper.log
 airodump.csv
+macextracted.csv
 802.11-01.cap
 802.11-02.cap
 802.11-03.cap

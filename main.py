@@ -475,3 +475,6 @@ if __name__ == "__main__":
     mapped_interfaces = mapping_interfaces()
 
     start(mapped_interfaces)
+
+	if os.path.exists(os.path.join(LOCAL_DIR, "airodump.csv")):
+		run_command("python3 macextractor.py")

